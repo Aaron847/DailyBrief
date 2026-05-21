@@ -57,16 +57,29 @@
 
 1. **Fork 这个 repo**（GitHub 右上角 Fork 按钮）
 2. 进 Fork 的 repo → **Settings → Actions → General → Workflow permissions** 设为 "Read and write"
-3. **Settings → Pages → Build & deployment → Source** 选 "Deploy from a branch"，分支 `gh-pages` / 路径 `/ (root)`（第一次跑完才会出现 gh-pages 分支，先建好 secret 再触发一次即可）
-4. **Settings → Secrets and variables → Actions → New repository secret** 加任一 API key：
-   - `ANTHROPIC_API_KEY`（推荐，prompt 都按 Sonnet 写的）
-   - 或 `OPENAI_API_KEY` / `DEEPSEEK_API_KEY` / `MINIMAX_API_KEY`
-5. （可选）同页 **Variables** 标签加：`LLM_BACKEND`（默认 `anthropic`）/ `REPORT_LOCALE`（默认 `zh`，`en` 切英文）/ `REPORT_TZ`（默认 UTC，如 `Asia/Shanghai`）
+3. **Settings → Pages → Build & deployment → Source** 选 "Deploy from a branch"，分支 `gh-pages` / 路径 `/ (root)`（第一次跑完才会出现 gh-pages 分支，先建 secret 再触发一次即可）
+4. **配置 LLM 后端** —— 这步是关键。每个后端都要**一个 secret + 对应的 `LLM_BACKEND` variable**（不只是 secret），按下表对照填：
+
+   | 你想用 | Secrets 标签加 | Variables 标签加 `LLM_BACKEND` | 大致成本 |
+   |---|---|---|---|
+   | **Anthropic Sonnet**（默认，prompt 按 Sonnet 调优） | `ANTHROPIC_API_KEY` | 不填或填 `anthropic` | ~$0.03-0.05 / 天，月 < $2 |
+   | **DeepSeek**（便宜大碗，中文友好） | `DEEPSEEK_API_KEY` | `deepseek` | ~$0.01-0.02 / 天，月 < $1 |
+   | **OpenAI** | `OPENAI_API_KEY` | `openai` | gpt-4o-mini ~$0.02 / 天 |
+   | **MiniMax** | `MINIMAX_API_KEY` | `minimax` | 类似 DeepSeek 量级 |
+
+   位置：**Settings → Secrets and variables → Actions**，左边切换 Secrets / Variables 两个标签。
+
+5. （可选）同页 Variables 再加：
+   - `LLM_MODEL` —— 覆盖该 backend 的默认模型（不填用 [`.env.example`](.env.example) 里列的默认）
+   - `REPORT_LOCALE` —— `zh`（默认）或 `en`，控制数据源 + UI + prompt 全套切英文
+   - `REPORT_TZ` —— IANA 时区名（默认 UTC），例 `Asia/Shanghai` / `America/Los_Angeles`，影响日期标签
 6. **Actions 标签 → 选 "Daily Brief" workflow → Run workflow** 手动触发一次
 
-跑完后报告会在 `https://<你的用户名>.github.io/<repo-名字>/`，之后每天 08:00 UTC 自动更新。改时间编辑 [`.github/workflows/daily.yml`](.github/workflows/daily.yml) 的 cron。
+跑完后报告在 `https://<你的用户名>.github.io/<repo-名字>/`，之后每天 08:00 UTC 自动更新。改时间编辑 [`.github/workflows/daily.yml`](.github/workflows/daily.yml) 第一行 cron。
 
-**费用估算**：Anthropic Sonnet 每天约 $0.03-0.05（6 次调用），月成本 < $2。DeepSeek / OpenAI mini 系列更便宜。GitHub Actions / Pages 公开 repo 完全免费。
+**关于费用**：GitHub Actions 公开 repo 完全免费。Pages 公开 repo 也免费。整个 GH Actions 模式唯一花钱的就是 LLM API 调用——按上表，DeepSeek 月成本不到 $1，Anthropic Sonnet < $2。
+
+> ⚠️ 用 GH Actions 模式就意味着**用不了本地 `claude` CLI**——Claude Code 的 OAuth 登录在你本机，GitHub 的服务器看不到。如果你已经在 Max 订阅里，建议两条路并行：本地装（B 方式）用 Claude CLI 跑你自己的服务器版本，GH Actions 用 DeepSeek 跑 Pages 公开版本。两份报告独立，互不影响。
 
 ### B. 本地常驻一键装
 
